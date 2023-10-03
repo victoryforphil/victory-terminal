@@ -27,7 +27,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Install Rust
-        run: rustup update nightly
+        run: rustup update stable && rustup component add llvm-tools-preview && rustup toolchain install nightly && rustup default nightly
       - name: Install cargo-llvm-cov
         uses: taiki-e/install-action@cargo-llvm-cov
       - name: Coverage but pretty
