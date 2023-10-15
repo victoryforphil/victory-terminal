@@ -21,8 +21,12 @@ jobs:
       - name: Run tests
         run: cargo nextest run --verbose
   coverage:
+    name: Collect test coverage
     runs-on: ubuntu-latest
+    # nightly rust might break from time to time
+    continue-on-error: true
     env:
+      RUSTFLAGS: -D warnings
       CARGO_TERM_COLOR: always
     steps:
       - uses: actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608 # v4
