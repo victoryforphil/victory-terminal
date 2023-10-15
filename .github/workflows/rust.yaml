@@ -39,7 +39,8 @@ jobs:
         uses: taiki-e/install-action@nextest
       - name: Install cargo-llvm-cov
         uses: taiki-e/install-action@cargo-llvm-cov
-      
+      - name: Install Rust Nightly
+        run: rustup toolchain install nightly
       - name: Collect coverage data
         run: cargo +nightly llvm-cov nextest --lcov --output-path lcov.info
       - name: Upload coverage data to codecov
