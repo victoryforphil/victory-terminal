@@ -1,5 +1,5 @@
 {
     "rust-analyzer.linkedProjects": [
-        "./flytecode/Cargo.toml"
+        "./Cargo.toml"
     ]
 }
