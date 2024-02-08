@@ -1,6 +1,8 @@
 mod controller;
 mod state;
 mod widgets;
+use std::sync::{Arc, Mutex};
+
 pub use controller::*;
 pub use state::*;
 pub use widgets::*;
@@ -14,14 +16,39 @@ pub struct TerminalApp {
 
     #[serde(skip)] // This how you opt-out of serialization of a field
     value: f32,
+    #[serde(skip)] // This how you opt-out of serialization of a field
+    widgets: Vec<AppWidgets>,
+    #[serde(skip)] // This how you opt-out of serialization of a field
+    controller: AppControllerHandle,
+}
+
+enum AppWidgets{
+    AddEntry(AddEnryWidget),
+    EntryList(EntryList),
+}
+
+impl Widget for AppWidgets{
+    fn draw(&mut self, ctx: &WidgetContext, state: &AppState, controller: &mut AppControllerHandle){
+        match self{
+            AppWidgets::AddEntry(widget) => widget.draw(ctx, state, controller),
+            AppWidgets::EntryList(widget) => widget.draw(ctx, state, controller),
+        }
+    }
 }
 
 impl Default for TerminalApp {
     fn default() -> Self {
+        let mut widgets = Vec::new();
+        widgets.push(AppWidgets::AddEntry(AddEnryWidget::new()));
+        widgets.push(AppWidgets::EntryList(EntryList::new()));
+        let controller = AppController::new();
+        let controller_handle = Arc::new(Mutex::new(controller.clone()));
         Self {
             // Example stuff:
             label: "Hello World!".to_owned(),
             value: 2.7,
+            widgets: widgets,
+            controller: controller_handle,
         }
     }
 }
@@ -45,41 +72,14 @@ impl eframe::App for TerminalApp {
 
     /// Called each time the UI needs repainting, which may be many times per second.
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        // Put your widgets into a `SidePanel`, `TopPanel`, `CentralPanel`, `Window` or `Area`.
-        // For inspiration and more examples, go to https://emilk.github.io/egui
-
-        egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
-            // The top panel is often a good place for a menu bar:
-
-            egui::menu::bar(ui, |ui| {
-                #[cfg(not(target_arch = "wasm32"))] // no File->Quit on web pages!
-                {
-                    ui.menu_button("File", |ui| {
-                        if ui.button("Quit").clicked() {
-                            _frame.close();
-                        }
-                    });
-                    ui.add_space(16.0);
-                }
-
-                egui::widgets::global_dark_light_mode_buttons(ui);
-            });
-        });
-
-        egui::CentralPanel::default().show(ctx, |ui| {
-            // The central panel the region left after adding TopPanel's and SidePanel's
-            ui.heading("eframe template");
-
-            ui.horizontal(|ui| {
-                ui.label("Write something: ");
-                ui.text_edit_singleline(&mut self.label);
-            });
-
-            ui.add(egui::Slider::new(&mut self.value, 0.0..=10.0).text("value"));
-            if ui.button("Increment").clicked() {
-                self.value += 1.0;
-            }
-        });
+        let mut state = AppState::new();
+        {
+            state = self.controller.lock().unwrap().state.clone();
+        }
+        for widget in &mut self.widgets {
+            // Call draw on the widget trait object
+            widget.draw(&WidgetContext::new(ctx), &state, &mut self.controller.clone());
+        }
     }
 }
 
