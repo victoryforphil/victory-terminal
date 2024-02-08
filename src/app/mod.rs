@@ -1,11 +1,16 @@
 mod controller;
 mod state;
 mod widgets;
+mod dock_window;
 use std::sync::{Arc, Mutex};
 
 pub use controller::*;
+
+use egui_dock::{DockArea, DockState, Style};
 pub use state::*;
 pub use widgets::*;
+
+use self::dock_window::DockWindow;
 
 /// We derive Deserialize/Serialize so we can persist app state on shutdown.
 #[derive(serde::Deserialize, serde::Serialize)]
@@ -17,7 +22,10 @@ pub struct TerminalApp {
     #[serde(skip)] // This how you opt-out of serialization of a field
     value: f32,
     #[serde(skip)] // This how you opt-out of serialization of a field
-    widgets: Vec<AppWidgets>,
+    dock_tree: DockState<String>,
+    last_drock_tree: String,
+    #[serde(skip)] // This how you opt-out of serialization of a field
+    dock: DockWindow,
     #[serde(skip)] // This how you opt-out of serialization of a field
     controller: AppControllerHandle,
 }
@@ -28,26 +36,38 @@ enum AppWidgets{
 }
 
 impl Widget for AppWidgets{
-    fn draw(&mut self, ctx: &WidgetContext, state: &AppState, controller: &mut AppControllerHandle){
+    fn draw(&mut self, ctx: WidgetContext, state: &AppState, controller: &mut AppControllerHandle){
         match self{
             AppWidgets::AddEntry(widget) => widget.draw(ctx, state, controller),
             AppWidgets::EntryList(widget) => widget.draw(ctx, state, controller),
+        }
+    }
+
+    fn get_widget_options(&self) -> WidgetOptions {
+        match self{
+            AppWidgets::AddEntry(widget) => widget.get_widget_options(),
+            AppWidgets::EntryList(widget) => widget.get_widget_options(),
         }
     }
 }
 
 impl Default for TerminalApp {
     fn default() -> Self {
-        let mut widgets = Vec::new();
-        widgets.push(AppWidgets::AddEntry(AddEnryWidget::new()));
-        widgets.push(AppWidgets::EntryList(EntryList::new()));
+        let mut tree = DockState::new(vec![]);
+
         let controller = AppController::new();
         let controller_handle = Arc::new(Mutex::new(controller.clone()));
+        let mut dock_window = DockWindow::new("Idk".to_string(), controller_handle.clone());
+       Self::add_dock_widget(&mut tree, &mut dock_window, AppWidgets::AddEntry(AddEnryWidget::new()));
+        Self::add_dock_widget(&mut tree, &mut dock_window, AppWidgets::EntryList(EntryList::new()));
+        
         Self {
             // Example stuff:
             label: "Hello World!".to_owned(),
             value: 2.7,
-            widgets: widgets,
+            dock_tree: tree,
+            dock: dock_window,
+            last_drock_tree: "".to_owned(),
             controller: controller_handle,
         }
     }
@@ -61,9 +81,15 @@ impl TerminalApp {
 
         // Load previous app state (if any).
         // Note that you must enable the `persistence` feature for this to work.
-
+        
         
         Default::default()
+    }
+    fn add_dock_widget(dock_tree: &mut DockState<String>,window: &mut DockWindow, widget: AppWidgets) {
+        let key = widget.get_widget_options().key.clone();
+        window.register_window(widget);
+
+        dock_tree.push_to_focused_leaf(key.clone());
     }
 }
 
@@ -72,14 +98,10 @@ impl eframe::App for TerminalApp {
 
     /// Called each time the UI needs repainting, which may be many times per second.
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        let mut state = AppState::new();
-        {
-            state = self.controller.lock().unwrap().state.clone();
-        }
-        for widget in &mut self.widgets {
-            // Call draw on the widget trait object
-            widget.draw(&WidgetContext::new(ctx), &state, &mut self.controller.clone());
-        }
+       
+        DockArea::new(&mut self.dock_tree)
+            .style(Style::from_egui(ctx.style().as_ref()))
+            .show(ctx, &mut self.dock);
     }
 }
 

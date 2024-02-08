@@ -15,10 +15,9 @@ impl AddEnryWidget{
 }
 
 impl super::Widget for AddEnryWidget{
-    fn draw(&mut self, ctx: &super::WidgetContext, state: &super::AppState, controller: &mut AppControllerHandle){
-        let ctx = ctx.egui_ctx;
-        egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
-            ui.label("Add Entry");
+    fn draw(&mut self, ctx: super::WidgetContext, state: &super::AppState, controller: &mut AppControllerHandle){
+        let ui = ctx.ui;
+        ui.label("Add Entry");
            
             ui.text_edit_singleline(&mut self.key);
 
@@ -29,6 +28,9 @@ impl super::Widget for AddEnryWidget{
                 let mut controller = controller.lock().unwrap();
                 controller.new_entry(self.key.clone(), vec![self.value.clone()]);
             }
-        });
+    }
+
+    fn get_widget_options(&self) -> super::WidgetOptions {
+        super::WidgetOptions { key: "add_entry".to_string(), title: "Add New entry".to_string() }
     }
 }
