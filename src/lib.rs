@@ -1,7 +1,6 @@
 mod app;
-mod message;
 mod connections;
+mod message;
 pub use app::TerminalApp;
-pub use message::*;
 pub use connections::*;
-
+pub use message::*;

@@ -1,12 +1,12 @@
 mod controller;
+mod dock_window;
 mod state;
 mod widgets;
-mod dock_window;
 use std::sync::{Arc, Mutex};
 
 pub use controller::*;
 
-use egui_dock::{DockArea, DockState, Style};
+use egui_dock::{DockArea, DockState, NodeIndex, Style};
 pub use state::*;
 pub use widgets::*;
 
@@ -30,23 +30,23 @@ pub struct TerminalApp {
     controller: AppControllerHandle,
 }
 
-enum AppWidgets{
-    AddEntry(AddEnryWidget),
-    EntryList(EntryList),
+enum AppWidgets {
+    AddConnection(AddConnectionWidget),
+    MessageList(MessageList),
 }
 
-impl Widget for AppWidgets{
-    fn draw(&mut self, ctx: WidgetContext, state: &AppState, controller: &mut AppControllerHandle){
-        match self{
-            AppWidgets::AddEntry(widget) => widget.draw(ctx, state, controller),
-            AppWidgets::EntryList(widget) => widget.draw(ctx, state, controller),
+impl Widget for AppWidgets {
+    fn draw(&mut self, ctx: WidgetContext, state: &AppState, controller: &mut AppControllerHandle) {
+        match self {
+            AppWidgets::AddConnection(widget) => widget.draw(ctx, state, controller),
+            AppWidgets::MessageList(widget) => widget.draw(ctx, state, controller),
         }
     }
 
     fn get_widget_options(&self) -> WidgetOptions {
-        match self{
-            AppWidgets::AddEntry(widget) => widget.get_widget_options(),
-            AppWidgets::EntryList(widget) => widget.get_widget_options(),
+        match self {
+            AppWidgets::AddConnection(widget) => widget.get_widget_options(),
+            AppWidgets::MessageList(widget) => widget.get_widget_options(),
         }
     }
 }
@@ -58,9 +58,18 @@ impl Default for TerminalApp {
         let controller = AppController::new();
         let controller_handle = Arc::new(Mutex::new(controller.clone()));
         let mut dock_window = DockWindow::new("Idk".to_string(), controller_handle.clone());
-       Self::add_dock_widget(&mut tree, &mut dock_window, AppWidgets::AddEntry(AddEnryWidget::new()));
-        Self::add_dock_widget(&mut tree, &mut dock_window, AppWidgets::EntryList(EntryList::new()));
-        
+
+        Self::add_dock_widget(
+            &mut tree,
+            &mut dock_window,
+            AppWidgets::AddConnection(AddConnectionWidget::new()),
+        );
+        Self::add_dock_widget_right(
+            &mut tree,
+            &mut dock_window,
+            AppWidgets::MessageList(MessageList::new()),
+        );
+
         Self {
             // Example stuff:
             label: "Hello World!".to_owned(),
@@ -75,33 +84,45 @@ impl Default for TerminalApp {
 
 impl TerminalApp {
     /// Called once before the first frame.
-    pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
+    pub fn new(_cc: &eframe::CreationContext<'_>) -> Self {
         // This is also where you can customize the look and feel of egui using
         // `cc.egui_ctx.set_visuals` and `cc.egui_ctx.set_fonts`.
 
         // Load previous app state (if any).
         // Note that you must enable the `persistence` feature for this to work.
-        
-        
+
         Default::default()
     }
-    fn add_dock_widget(dock_tree: &mut DockState<String>,window: &mut DockWindow, widget: AppWidgets) {
+    fn add_dock_widget(
+        dock_tree: &mut DockState<String>,
+        window: &mut DockWindow,
+        widget: AppWidgets,
+    ) {
         let key = widget.get_widget_options().key.clone();
         window.register_window(widget);
 
         dock_tree.push_to_focused_leaf(key.clone());
     }
+
+    fn add_dock_widget_right(
+        dock_tree: &mut DockState<String>,
+        window: &mut DockWindow,
+        widget: AppWidgets,
+    ) {
+        let key = widget.get_widget_options().key.clone();
+        window.register_window(widget);
+
+        dock_tree
+            .main_surface_mut()
+            .split_right(NodeIndex::root(), 0.5, vec![key.clone()]);
+    }
 }
 
 impl eframe::App for TerminalApp {
- 
-
     /// Called each time the UI needs repainting, which may be many times per second.
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-       
         DockArea::new(&mut self.dock_tree)
             .style(Style::from_egui(ctx.style().as_ref()))
             .show(ctx, &mut self.dock);
     }
 }
-

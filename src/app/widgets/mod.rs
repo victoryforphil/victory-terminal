@@ -1,33 +1,38 @@
 use super::AppState;
 
-mod add_entry;
-pub use add_entry::*;
+mod add_connection;
+pub use add_connection::*;
 
-mod entry_list;
+mod message_list;
 use egui::Context;
 use egui_dock::egui::Ui;
-pub use entry_list::*;
+pub use message_list::*;
 
-pub struct WidgetOptions{
+pub struct WidgetOptions {
     pub key: String,
     pub title: String,
 }
-pub struct WidgetContext<'a>{
-    pub egui_ctx:  Context,
-    pub ui : &'a mut Ui,
+pub struct WidgetContext<'a> {
+    pub egui_ctx: Context,
+    pub ui: &'a mut Ui,
 }
 
-impl<'a> WidgetContext<'a>{
-    pub fn new(ui: &'a mut Ui) -> Self{
+impl<'a> WidgetContext<'a> {
+    pub fn new(ui: &'a mut Ui) -> Self {
         let ctx = ui.ctx().clone();
-        Self{
+        Self {
             egui_ctx: ctx,
             ui: ui,
         }
     }
 }
 
-pub trait Widget{
+pub trait Widget {
     fn get_widget_options(&self) -> WidgetOptions;
-    fn draw(&mut self, ctx:  WidgetContext, state: &AppState, controller: &mut super::AppControllerHandle);
+    fn draw(
+        &mut self,
+        ctx: WidgetContext,
+        state: &AppState,
+        controller: &mut super::AppControllerHandle,
+    );
 }

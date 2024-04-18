@@ -1,24 +1,23 @@
-use std::{collections::HashMap, hash::Hash};
+use std::collections::HashMap;
 
-use crate::{Connection, TerminalMessage};
+use crate::TerminalMessage;
 
 #[derive(Clone, Debug)]
-pub struct AppState{
-
+pub struct AppState {
     pub messages: HashMap<String, Vec<TerminalMessage>>,
 }
 
-impl AppState{
-    pub fn new() -> Self{
-        Self{
+impl AppState {
+    pub fn new() -> Self {
+        Self {
             messages: HashMap::new(),
         }
     }
 
-    pub fn append_message(&mut self, connection_name: String, messages: Vec<TerminalMessage>){
-        if let Some(connection_messages) = self.messages.get_mut(&connection_name){
+    pub fn append_message(&mut self, connection_name: String, messages: Vec<TerminalMessage>) {
+        if let Some(connection_messages) = self.messages.get_mut(&connection_name) {
             connection_messages.extend(messages);
-        }else{
+        } else {
             self.messages.insert(connection_name, messages);
         }
     }
