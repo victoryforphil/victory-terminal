@@ -1,15 +1,13 @@
 use crate::app::AppControllerHandle;
 
 pub struct AddEnryWidget{
-    key: String,
-    value: String,
+    name: String,
 }
 
 impl AddEnryWidget{
     pub fn new() -> Self{
         Self{
-            key: "".to_string(),
-            value: "".to_string(),
+            name: "".to_string(),
         }
     }
 }
@@ -19,14 +17,12 @@ impl super::Widget for AddEnryWidget{
         let ui = ctx.ui;
         ui.label("Add Entry");
            
-            ui.text_edit_singleline(&mut self.key);
+            ui.text_edit_singleline(&mut self.name);
 
-           
-            ui.text_edit_singleline(&mut self.value);
 
             if ui.button("Add").clicked(){
                 let mut controller = controller.lock().unwrap();
-                controller.new_entry(self.key.clone(), vec![self.value.clone()]);
+                controller.new_mock_connection(self.name.clone());
             }
     }
 
