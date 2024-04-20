@@ -7,10 +7,9 @@ use crate::TerminalMessage;
 
 use self::options::ConnectionOptions;
 
-
 mod options;
 
-pub trait Connection: Debug{
+pub trait Connection: Debug {
     fn get_options(&self) -> ConnectionOptions;
     fn connect(&mut self);
     fn read(&self) -> Vec<TerminalMessage>;

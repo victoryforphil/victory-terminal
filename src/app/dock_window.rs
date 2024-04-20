@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use egui::{Style, Ui};
+use egui::Style;
 use egui_dock::TabViewer;
 
 use super::{AppControllerHandle, AppState, AppWidgets, Widget, WidgetContext};
@@ -11,7 +11,6 @@ pub struct DockWindow {
     pub current: String,
     pub windows: HashMap<String, AppWidgets>,
     pub controller_handle: AppControllerHandle,
-    
 }
 impl DockWindow {
     pub fn new(title: String, controller: AppControllerHandle) -> Self {
@@ -24,11 +23,10 @@ impl DockWindow {
         }
     }
 
-    pub fn register_window(&mut self,  widget: AppWidgets) {
+    pub fn register_window(&mut self, widget: AppWidgets) {
         let key = widget.get_widget_options().key.clone();
         self.windows.insert(key, widget);
     }
-
 }
 
 impl TabViewer for DockWindow {
@@ -39,11 +37,9 @@ impl TabViewer for DockWindow {
         {
             state = self.controller_handle.lock().unwrap().state.clone();
         }
-        let mut context = WidgetContext::new(ui);
+        let context = WidgetContext::new(ui);
         match self.windows.get_mut(tab.as_str()) {
-            Some(widget) => {
-                widget.draw(context, &state, &mut self.controller_handle.clone())
-            }
+            Some(widget) => widget.draw(context, &state, &mut self.controller_handle.clone()),
             None => {
                 // set window to trasnparent
 
@@ -53,6 +49,12 @@ impl TabViewer for DockWindow {
     }
 
     fn title(&mut self, tab: &mut Self::Tab) -> egui_dock::egui::WidgetText {
-        self.windows.get(tab.as_str()).unwrap().get_widget_options().title.clone().into()
+        self.windows
+            .get(tab.as_str())
+            .unwrap()
+            .get_widget_options()
+            .title
+            .clone()
+            .into()
     }
 }

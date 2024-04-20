@@ -1,44 +1,49 @@
-use std::{collections::HashMap, sync::{Arc, Mutex}};
+use std::{
+    collections::HashMap,
+    sync::{Arc, Mutex},
+};
 
 use tracing::{debug, info};
 
-use crate::{Connection, DataGenerator, MockConnection};
+use crate::{Connection, MockConnection};
 
 use super::AppState;
 #[derive(Clone, Debug)]
-pub struct AppController{
+pub struct AppController {
     pub state: AppState,
     pub connections: HashMap<String, Arc<Mutex<dyn Connection>>>,
 }
 
-impl AppController{
-    pub fn new() -> Self{
-        Self{
+impl AppController {
+    pub fn new() -> Self {
+        Self {
             state: AppState::new(),
             connections: HashMap::new(),
         }
     }
 
-    pub fn new_mock_connection(&mut self, name: String){
+    pub fn new_mock_connection(&mut self, name: String) {
         let mut connection = MockConnection::new();
         connection.connect();
         info!("Mock connection {} created", name);
-        self.connections.insert(name, Arc::new(Mutex::new(connection)));
-      
+        self.connections
+            .insert(name, Arc::new(Mutex::new(connection)));
     }
-    pub fn read_messages(&mut self){
-        for (name, connection) in self.connections.iter_mut(){
+    pub fn read_messages(&mut self) {
+        for (name, connection) in self.connections.iter_mut() {
             let connection = connection.lock().unwrap();
             let messages = connection.read();
-            if messages.len() > 0{
-                debug!("Messages read from connection {}: {:?}", name, messages.len());
+            if messages.len() > 0 {
+                debug!(
+                    "Messages read from connection {}: {:?}",
+                    name,
+                    messages.len()
+                );
             }
             self.state.append_message(name.clone(), messages);
-           
         }
-    }   
-
+    }
 }
 
 // Mutex Arc type for the app controller
-pub type AppControllerHandle= Arc<Mutex<AppController>>;
+pub type AppControllerHandle = Arc<Mutex<AppController>>;
