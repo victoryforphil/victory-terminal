@@ -5,7 +5,7 @@ use std::{
 
 use tracing::{debug, info};
 
-use crate::{Connection, MockConnection};
+use crate::{Connection, ConnectionOptions, MockConnection};
 
 use super::AppState;
 #[derive(Clone, Debug)]
@@ -22,9 +22,9 @@ impl AppController {
         }
     }
 
-    pub fn new_mock_connection(&mut self, name: String) {
+    pub fn new_mock_connection(&mut self, name: String, opts: &ConnectionOptions) {
         let mut connection = MockConnection::new();
-        connection.connect();
+        connection.connect(opts);
         info!("Mock connection {} created", name);
         self.connections
             .insert(name, Arc::new(Mutex::new(connection)));

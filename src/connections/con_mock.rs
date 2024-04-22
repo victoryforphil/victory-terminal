@@ -1,6 +1,6 @@
 use std::sync::mpsc::{Receiver, Sender};
-
-use tracing::debug;
+use std::time::Duration;
+use tracing::{debug, info};
 
 use crate::{Connection, TerminalMessage};
 
@@ -10,13 +10,15 @@ use super::options::{ConnectionOptionBuilder, ConnectionOptionType, ConnectionOp
 pub struct DataGenerator {
     pub counter: u32,
     pub date_string: String,
+
 }
+
 
 impl DataGenerator {
     pub fn new() -> Self {
         Self {
             counter: 0,
-            date_string: String::new(),
+            date_string: String::new()
         }
     }
 
@@ -26,11 +28,13 @@ impl DataGenerator {
         TerminalMessage::from_string(self.date_string.clone())
     }
 }
+
 #[derive(Debug)]
 pub struct MockConnection {
     pub data_gen: DataGenerator,
     pub data_channel_rx: Receiver<TerminalMessage>,
     pub data_channel_tx: Sender<TerminalMessage>,
+    pub delay: Duration,
 }
 
 impl MockConnection {
@@ -40,14 +44,17 @@ impl MockConnection {
             data_gen: DataGenerator::new(),
             data_channel_rx: rx,
             data_channel_tx: tx,
+            delay: Duration::from_millis(100)
+
         }
     }
 
     fn thread_start(&mut self) {
         let tx = self.data_channel_tx.clone();
         let mut data_generator = self.data_gen.clone();
+        let delay = self.delay.clone();
         std::thread::spawn(move || loop {
-            std::thread::sleep(std::time::Duration::from_millis(100));
+            std::thread::sleep(delay);
             let message = data_generator.generate_data();
             tx.send(message).unwrap();
             debug!("Data sent");
@@ -60,18 +67,29 @@ impl Connection for MockConnection {
         let mut options = ConnectionOptions::new();
 
         let raw_string_options = ConnectionOptionBuilder::new()
-            .name("Arguments".to_string())
-            .default(ConnectionOptionType::String("".to_string()))
-            .description("Arguments to pass to the mock connection".to_string())
+            .name("Delay (s)".to_string())
+            .default(ConnectionOptionType::Float(0.1))
+            .description("Delay (s)".to_string())
+            .max(ConnectionOptionType::Float(5.0))
+            .min( ConnectionOptionType::Float(0.01))
+            .value(ConnectionOptionType::Float(0.1))
             .build();
 
         options
             .options
-            .insert("arguments".to_string(), raw_string_options);
+            .insert("delay".to_string(), raw_string_options);
         options
     }
 
-    fn connect(&mut self) {
+    fn connect(&mut self, opts: &ConnectionOptions) {
+        let delay = opts.options.get("delay").unwrap();
+        info!("Delay: {:?}", delay.value);
+         match delay.value{
+            ConnectionOptionType::Float(f_val) => {
+                self.delay = Duration::from_secs_f32(f_val)
+            },
+            _ => panic!("Not ")
+        };
         self.thread_start();
     }
 

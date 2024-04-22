@@ -5,12 +5,12 @@ pub use con_mock::*;
 
 use crate::TerminalMessage;
 
-use self::options::ConnectionOptions;
 
 mod options;
 
+pub use options::*;
 pub trait Connection: Debug {
     fn get_options(&self) -> ConnectionOptions;
-    fn connect(&mut self);
+    fn connect(&mut self, opts: &ConnectionOptions);
     fn read(&self) -> Vec<TerminalMessage>;
 }
